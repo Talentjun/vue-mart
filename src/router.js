@@ -4,8 +4,17 @@ import Home from './views/Home.vue'
 import Login from './views/Login.vue'
 import Cart from './views/Cart.vue'
 import store from './store';
+import History from './utils/history';
 
 Vue.use(Router)
+Vue.use(History)
+
+//在实例化之前扩展Router
+
+Router.prototype.goBack=function(){
+  this.isBack=true;
+  this.back();//这里用的是vue-router的back方法
+}
 
 const router= new Router({
   mode: 'history',
@@ -39,9 +48,6 @@ const router= new Router({
 })
 
 router.beforeEach((to,from,next)=>{
-  console.log(to);
-  console.log(from);
-  console.log(next);
   if(to.meta.auth){//需要认证，则检查令牌
     if(store.state.token){//已登录
       next()
@@ -54,6 +60,18 @@ router.beforeEach((to,from,next)=>{
     }
   }else{
     next();
+  }
+})
+
+//afterEach记录历史记录
+router.afterEach((to,from)=>{
+  if(router.isBack){
+    History.pop();
+    router.isBack=false;
+    router.transitionName="route-back";
+  }else{
+    History.push(to.path);
+    router.transitionName="route-forward";
   }
 })
 
